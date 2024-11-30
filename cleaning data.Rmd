@@ -1,0 +1,396 @@
+---
+title: "Untitled"
+author: "cleaning data"
+date: "2024-11-11"
+output: html_document
+---
+libraries needed
+library readxl
+library ggplot2
+library dplyr
+library tidyr
+
+```{r}
+# install.packages("readxl")
+#library(readxl)
+# Replace with the actual file path of your Excel file
+# Load CSV file using read.csv
+data <- read.csv("C:\\Users\\Admin\\Downloads\\Billionaires Statistics Dataset.csv")
+data
+
+
+
+```
+
+After loading the data set into R , the next step is to clean it. Here are common steps for data cleaning
+Step 1: Checking the Structure of the Data
+first inspecting the dataset to understand its structure, including the column names, data types, and the first few rows.
+
+```{r}
+# View the structure of the data
+str(data)
+
+
+
+```
+
+# interpretations
+
+The Billionaires Statistics Dataset contains 2,640 observations with 35 variables detailing global billionaires' demographics, financial data, and socio-economic contexts. It includes age (ranging from 30s to 92), gender (predominantly male), and countries of residence, with significant representation from the United States and France. Financial data covers rank, net worth (up to $211 billion), and wealth sources like Technology, Fashion & Retail, and Automotive. Country-level indicators include tertiary education enrollment (up to 88.2%), life expectancy (69.4–82.5 years), and tax metrics. Additional details include self-made status, organizations, geographic coordinates, and birth information, offering a comprehensive view of the world's wealthiest individuals and their contexts.
+
+
+
+Step 2: Handle Missing Values
+Missing values are common in data sets. I can either remove rows with missing values or replace them with something meaningful (e.g., mean, median, or a placeholder like NA).
+
+Check for Missing Values
+
+```{r}
+# Check for missing values in the entire dataset
+sum(is.na(data))
+
+# Check for missing values by column
+colSums(is.na(data))
+
+```
+# interpretations
+
+
+
+
+The Billionaires Statistics Dataset is mostly complete, with key variables like rank, finalWorth, category, and personName having no missing values. However, demographic fields like age (65 missing) and birthYear (76 missing) have gaps, as do country-level indicators like cpi_country and total_tax_rate_country (182–184 missing). Geographic coordinates (latitude_country and longitude_country) also have 164 missing entries. Addressing these gaps is essential for accurate analysis, particularly in demographics and global comparisons.
+
+
+```{r}
+# Identify numeric columns
+numeric_columns <- sapply(data, is.numeric)
+
+# Apply median imputation to all numeric columns
+data[numeric_columns] <- lapply(data[numeric_columns], function(x) {
+  x[is.na(x)] <- median(x, na.rm = TRUE)
+  return(x)
+})
+numeric_columns
+
+
+```
+# interpretations
+The dataset contains information about 2,640 individuals with 35 variables, including rank, finalWorth, category, personName, age, country, and more. Key insights:
+
+Outliers are found in columns like finalWorth (37), cpi_country (42), and latitude_country (61).
+No duplicates detected.
+Data types include numeric, integer, character, and logical.
+Top entries feature billionaires like Bernard Arnault and Elon Musk, categorized by industries such as Technology and Finance.
+
+
+
+```{r}
+# Check if there are still any NA values in numeric columns
+sapply(data[numeric_columns], function(x) sum(is.na(x)))
+
+```
+# interpretation
+
+If sapply(data[numeric_columns], function(x) sum(is.na(x))) is giving you zero for all columns, it means that there are no remaining NA (missing) values in the numeric columns of this dataset. This indicates that the imputation process was successful, and all previously missing values in those columns have been replaced with the median values.
+
+In summary:
+
+Output of Zero: Each numeric column now has 0 missing values, meaning no NA values are left after imputation.
+This confirms that your data is clean in terms of missing values for those numeric columns. I can now  proceed with further analysis or visualization!
+
+#To check for missing values in categorical data in R, you can use a similar approach to how we checked for numeric columns, but this time filtering for categorical columns. Here’s how you can do it:
+
+Step 1: Identify Categorical Columns
+Categorical columns in R are typically stored as factors or character types. We can use sapply() to identify them.
+
+Step 2: Count Missing Values in Each Categorical Column
+
+
+
+```{r}
+
+# Identify categorical columns (factor or character)
+categorical_columns <- sapply(data, function(x) is.factor(x) || is.character(x))
+
+# Check for missing values in categorical columns
+sapply(data[categorical_columns], function(x) sum(is.na(x)))
+
+
+```
+# interpretations
+
+
+the output shows 0 for a column, it means there are no missing values in that categorical column.
+If it shows any non-zero number, that’s the count of missing values in that column, and you may want to address those by imputation or another cleaning method., but as it is shown above in the out put , our no longer contains any missing values
+
+
+```{r}
+# Export the cleaned data to a CSV file
+write.csv(data, "Cleaned_Data.csv", row.names = FALSE)
+
+```
+
+
+## cleaning of categorical data or columns in our data sets
+
+
+```{r}
+# Identify categorical columns (factor or character)
+categorical_columns <- sapply(data, function(x) is.factor(x) || is.character(x))
+
+# Replace empty strings and other non-standard missing values with NA in categorical columns
+data[categorical_columns] <- lapply(data[categorical_columns], function(x) {
+  x[x == ""] <- NA         # Empty strings
+  x[x == "N/A"] <- NA       # "N/A"
+  x[x == "NULL"] <- NA      # "NULL"
+  x[x == " "] <- NA         # Whitespace
+  return(x)
+})
+categorical_columns
+
+```
+# interpretations
+our columns of categorical still have missing values as it is shown above in the outputs
+
+
+
+```{r}
+# Check for any remaining NA values in categorical columns
+sapply(data[categorical_columns], function(x) sum(is.na(x)))
+
+
+```
+```{r}
+# Function to replace NAs with the mode
+impute_mode <- function(x) {
+  mode_value <- names(sort(table(x), decreasing = TRUE))[1]
+  x[is.na(x)] <- mode_value
+  return(x)
+}
+
+# Apply imputation to categorical columns
+data[categorical_columns] <- lapply(data[categorical_columns], impute_mode)
+data
+
+```
+
+
+5. Verify the Results
+After performing any of these manipulations, check again to make sure there are no missing values in your categorical data:
+
+```{r}
+# Check for missing data again
+sapply(data[categorical_columns], function(x) sum(is.na(x)))
+
+```
+# interpretations
+our data set no longer contains any missing values, all columns are clean
+so we can proceed with our further steps of analysis
+
+
+
+```{r}
+# Load necessary libraries
+library(dplyr)
+library(VIM)
+
+# Define the function to replace NAs with the mode
+impute_mode <- function(x) {
+  mode_value <- names(sort(table(x), decreasing = TRUE))[1]
+  x[is.na(x)] <- mode_value
+  return(x)
+}
+
+# Define the threshold for deciding when to use mode or KNN
+threshold <- 0.2  # Columns with more than 20% missing values will use KNN, others will use mode
+
+# Check the percentage of missing values in each column
+missing_percentage <- colSums(is.na(data)) / nrow(data)
+
+# Identify categorical columns
+categorical_columns <- c("category", "personName", "country", "city", "source", "industries", 
+                         "countryOfCitizenship", "organization", "status", "gender", "birthDate", 
+                         "lastName", "firstName", "title", "date", "state", "residenceStateRegion", "gdp_country")
+
+# Loop through categorical columns and apply imputation based on missing percentage
+data_imputed <- data
+
+for (col in categorical_columns) {
+  # Check the missing data percentage for the current column
+  if (missing_percentage[col] <= threshold) {
+    # Apply mode imputation if missing data is below the threshold
+    data_imputed[[col]] <- impute_mode(data_imputed[[col]])
+  } else {
+    # Apply KNN imputation if missing data is above the threshold
+    data_imputed[[col]] <- kNN(data_imputed, variable = col, k = 3)[[col]]
+  }
+}
+
+# Print the imputed data
+print(data_imputed)
+
+```
+this is our imputed data set with no missing values
+
+
+
+```{r}
+# Check for any remaining missing values after imputation
+missing_values_after_imputation <- colSums(is.na(data_imputed))
+
+# Print the result
+print(missing_values_after_imputation)
+
+# If there are no missing values, all values should be zero
+
+```
+No missing values , as it is shown above in our outputs
+
+
+
+```{r}
+# Check for duplicate rows
+duplicates <- duplicated(data_imputed)
+
+# View the rows that are duplicates
+duplicate_rows <- data_imputed[duplicates, ]
+
+# Show how many duplicate rows exist
+cat("Number of duplicate rows: ", sum(duplicates), "\n")
+
+# Optionally, view the first few duplicate rows
+head(duplicate_rows)
+
+# Remove duplicates if necessary
+data_cleaned <- data_imputed[!duplicated(data_imputed), ]
+
+
+```
+
+What Happens If There Are No Duplicates?
+If there are no duplicates, sum(duplicates) will return 0, and no rows will be removed. It’s always good practice to first confirm the presence of duplicates before deciding whether to clean them up.
+
+By doing this, you ensure that you're only removing duplicates when necessary, and it gives you a chance to inspect them before making any changes.
+
+```{r}
+# Check the data types of all columns
+sapply(data, class)
+
+```
+```{r}
+# Check if any column names contain spaces
+any(grepl(" ", colnames(data)))
+
+# Check if any column names contain special characters (other than underscores and alphanumeric characters)
+any(grepl("[^a-zA-Z0-9_]", colnames(data)))
+
+```
+This will return TRUE if any column names contain spaces or special characters. If both return FALSE, the column names are likely already standardized. as they are shown above , so our data is standardized
+
+
+
+```{r}
+#Check if All Column Names Are Lowercase To check if the column names are already in lowercase, you can compare the column names to their lowercase version.
+
+
+# Check if all column names are lowercase
+all(colnames(data) == tolower(colnames(data)))
+
+```
+This will return TRUE if all column names are already in lowercase.
+
+
+
+```{r}
+# Bar chart for categorical data (e.g., gender)
+library(ggplot2)
+ggplot(data, aes(x = gender)) +
+  geom_bar() +
+  labs(title = "Gender Distribution")
+
+# Histogram for continuous data (e.g., age)
+ggplot(data, aes(x = age)) +
+  geom_histogram(binwidth = 5) +
+  labs(title = "Age Distribution")
+
+```
+#Interpretation of the Histogram:
+
+
+The x-axis represents age and is divided into intervals (e.g., 25-30, 30-35, etc.).
+The y-axis represents the count or frequency of billionaires within each age range.
+From the graph, we see that the frequency is highest in the age range of around 50-70 years, indicating that the majority of billionaires are in this age group.
+
+
+Peak in the middle: The highest number of billionaires appears to be in their 50s and 60s. This suggests that wealth accumulation often happens after a period of career development, investments, or company growth.
+
+Shape of the Distribution:
+The histogram shows a roughly bell-shaped distribution, suggesting that the data is approximately normally distributed.
+
+Central Tendency:
+The highest bars (peak) are concentrated around the 50 to 75 age range, indicating that the majority of the individuals fall within this age group.
+
+Spread:
+The data spans from approximately 25 to 100, showing a wide range of ages, but the counts decline significantly at the extremes (both lower and higher ages).
+
+
+Skewed distribution: The histogram may show a slight skew, with fewer billionaires in the younger (e.g., under 30 years) and older (e.g., over 80 years) age ranges. This could indicate that most billionaires are more likely to have reached their status later in life, after years of work, investments, or inheritance.
+
+Conclusion:
+The histogram indicates that most individuals in this dataset are middle-aged or older, with fewer younger and older individuals. This distribution is typical for age data in a population where middle age is the most represented group.
+
+Knowledge Gained by the Individual:
+By analyzing this histogram, the individual gains insights into:
+
+Age and Wealth Correlation:
+Understanding that the majority of billionaires are typically middle-aged or older reveals the importance of experience, investment timing, and opportunity in wealth accumulation.
+
+Distribution Understanding:
+The individual learns how to interpret the distribution of continuous data and how different age groups contribute to the population.
+
+Practical Data Skills:
+The individual hones their ability to create and interpret visual representations of data, enabling them to derive conclusions from statistical distributions.
+
+Insights for Business and Economics:
+By observing when most billionaires accumulate wealth, the individual may draw conclusions about business trends, the economic environment, and the benefits of experience in entrepreneurship and investments.
+
+Conclusion (Billionaires Statistics Dataset):
+Based on the Billionaires Statistics Dataset, the age distribution suggests that the majority of billionaires achieve their wealth in their 50s and 60s. This could be due to the need for years of experience, strategic investments, or the growth of businesses over time. The distribution also indicates that fewer billionaires are under 30 years old or over 80 years old, highlighting that wealth at such extreme ages is less common. This insight is valuable for understanding the life stages during which individuals tend to accumulate substantial wealth, and it may inform discussions about opportunities for younger people to build wealth or about trends in the later stages of billionaires’ careers.
+
+
+
+# interpretation of bar graph
+
+Interpretation of the Bar Chart (Gender Distribution)
+The bar chart shown here represents the gender distribution of billionaires in the dataset. Here's a breakdown of the interpretation:
+
+Description of the Bar Chart:
+
+The x-axis represents gender, with two categories: F for female and M for male.
+The y-axis represents the count or frequency of billionaires for each gender.
+The bar for M (Male) is significantly taller than the bar for F (Female), indicating that there are far more male billionaires than female billionaires in the dataset.
+Interpretation of Key Trends:
+
+Male dominance: The bar chart clearly shows that the majority of billionaires in this dataset are male. The count for male billionaires is much higher than that for female billionaires.
+Gender imbalance: The small bar for female billionaires indicates a large gender gap in terms of wealth accumulation, with very few women represented as billionaires compared to men.
+
+
+
+Knowledge Gained by the Individual:
+By analyzing this bar chart, the individual gains insights into:
+
+Gender Disparity: The data highlights the significant gender disparity in billionaire wealth, revealing the inequality between men and women at the highest wealth levels.
+Representation of Women: The individual can understand how gender representation in wealth accumulation is skewed towards men and the need to explore the underlying factors behind this disparity.
+Data Visualization Skills: The individual improves their ability to use bar charts to visualize categorical data, which is a common and effective method for comparing frequencies or counts within different categories.
+
+
+
+Conclusion (Billionaires Statistics Dataset):
+Based on the Billionaires Statistics Dataset, it is evident that the distribution of billionaires by gender is highly imbalanced, with a predominant representation of male billionaires. This could reflect broader socio-economic trends and challenges, such as access to resources, opportunities, and systemic barriers that women face in accumulating significant wealth. The relatively small number of female billionaires in the dataset suggests the importance of addressing gender disparities in business and wealth-building opportunities.
+
+This conclusion underscores the need for initiatives and policies aimed at empowering women in entrepreneurship, business, and investment, and for further research to understand the reasons behind the gender gap in billionaire wealth.
+
+
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
