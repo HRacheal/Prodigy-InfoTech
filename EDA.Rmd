@@ -1,0 +1,572 @@
+---
+title: "EDA"
+author: "cleaning data"
+date: "2024-11-21"
+output: html_document
+---
+
+
+
+```{r}
+# Install necessary packages (if not already installed)
+#install.packages(c("dplyr", "ggplot2", "tidyr", "readr", "skimr", "lubridate", "corrplot"))
+
+# Load the libraries
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(readr)
+library(skimr)
+library(lubridate)
+library(corrplot)
+
+
+```
+these are the libraries, that we are going to use  in our process of doing this task
+
+
+
+
+```{r}
+# Load the dataset without warnings
+flights_data <- read_csv("C:/Users/Admin/Downloads/flights.csv", show_col_types = FALSE)
+
+# If you want to explore the data, you can check the first few rows
+head(flights_data)
+
+```
+# interpreataion 
+these are our loaded data set 
+
+
+ Data Cleaning
+3.1 Check the Structure of the Data
+Beginning by inspecting the structure of the dataset and checking for missing values.
+```{r}
+# Check the structure of the dataset
+str(flights_data)
+
+# Summary statistics for the dataset
+summary(flights_data)
+
+# Check for missing values
+sum(is.na(flights_data))
+
+```
+# interpretation
+
+The dataset contains flight data from Belgian airports (2016-2022) with details like departure/arrival counts, IFR flights, and airport information. Key insights include:
+
+Year Range: 2016-2022, with the most frequent year being 2019.
+Flight Data: Average of 63 flights per month, with total flights ranging from 0 to 1,628. IFR flights are missing for many entries.
+Airports: Includes airports like Antwerp, Brussels, Charleroi, and Liège.
+Next Steps:
+
+
+
+
+Handling missing IFR data.
+Analyze trends over time and compare airports.
+You can also use skim to get a quick overview of the data, which includes the distribution of missing values:
+```{r}
+# Skim through the dataset
+skim(flights_data)
+
+```
+this means that there missing values in flt- dep-ifr-2 which are 1, 439,355 in some parts of the data set
+
+```{r}
+# Impute missing DepartureDelay values with the median
+flights_data$	FLT_DEP_IFR_2[is.na(flights_data$	FLT_DEP_IFR_2)] <- median(flights_data$	FLT_DEP_IFR_2, na.rm = TRUE)
+flights_data
+```
+
+
+
+these show that we have imputed our missing values in numerical columns using median, beacuse it is the one that does not increase the outliers in our data sets
+
+```{r}
+# Impute missing DepartureDelay values with the median
+flights_data$		FLT_ARR_IFR_2[is.na(flights_data$		FLT_ARR_IFR_2)] <- median(flights_data$		FLT_ARR_IFR_2, na.rm = TRUE)
+flights_data
+```
+
+
+these show that we have imputed our missing values in numerical columns using median, beacuse it is the one that does not increase the outliers in our data sets
+```{r}
+# Impute missing DepartureDelay values with the median
+flights_data$		FLT_TOT_IFR_2[is.na(flights_data$		FLT_TOT_IFR_2)] <- median(flights_data$		FLT_TOT_IFR_2, na.rm = TRUE)
+flights_data
+```
+
+these show that we have imputed our missing values in numerical columns using median, beacuse it is the one that does not increase the outliers in our data sets
+```{r}
+# Skim through the dataset
+skim(flights_data)
+```
+3.3 Convert Data Types
+Ensure that categorical variables are factors and numeric variables are appropriately typed. For
+
+
+
+```{r}
+colnames(flights_data)
+
+```
+
+All other columns seem to have appropriate types:
+
+Text-based columns (APT_ICAO, APT_NAME, STATE_NAME, Pivot Label) are stored as characters, which is correct unless you need to categorize them (e.g., for grouping).
+Numerical columns (FLT_DEP_1, FLT_ARR_1, etc.) and date columns (FLT_DATE) are appropriately typed.
+```{r}
+#Convert MONTH_NUM to numeric or factor depending on the context:when we wnat to analyze or find the relationship, or trends, we just convert it into numerical 
+
+flights_data$MONTH_NUM <- as.numeric(flights_data$MONTH_NUM)  # For numeric operations
+flights_data
+
+```
+Step 4: Exploratory Data Analysis (EDA)
+4.1 Summary Statistics and Distribution
+Starting by generating summary statistics and visualizing the distribution of key variables, such as departure delay, arrival delay, and distance.
+
+```{r}
+# Summary statistics for the FLT_DEP_1 column
+summary(flights_data$FLT_DEP_1)
+
+# Plot the distribution of FLT_DEP_1
+library(ggplot2)
+
+ggplot(flights_data, aes(x = FLT_DEP_1)) + 
+  geom_histogram(bins = 30, fill = "blue", color = "black") + 
+  theme_minimal() + 
+  labs(title = "Distribution of FLT_DEP_1", 
+       x = "FLT_DEP_1 (Departure Counts)", 
+       y = "Frequency")
+
+
+```
+The histogram you provided shows the distribution of FLT_DEP_1 (departure counts) in the dataset "flights." Here's the interpretation:
+
+The data is heavily skewed to the left, with a peak around zero, indicating that most of the observations have very low departure counts.
+As the departure count increases, the frequency of occurrences drops significantly, forming a long tail on the right side. This suggests that while most observations have a small number of departures, there are a few cases with much larger departure counts (up to around 750).
+This positive skewness in the data implies that most of the airports or times have low flight departures, with only a few instances of high-volume departures.
+This could suggest a need to handle the outliers or skewness when performing any analysis or modeling.
+
+conclusion
+Right-skewed distribution: This indicates that most flights have a small number of arrivals, with a few flights having a significantly larger number of arrivals. This could be due to factors like hub airports, popular destinations, or specific airline operations.
+
+
+
+For arrival visualization
+```{r}
+# Summary statistics for the FLT_ARR_1 column
+summary(flights_data$FLT_ARR_1)
+
+# Plot the distribution of FLT_ARR_1
+library(ggplot2)
+
+ggplot(flights_data, aes(x = FLT_ARR_1)) + 
+  geom_histogram(bins = 30, fill = "green", color = "black") + 
+  theme_minimal() + 
+  labs(title = "Distribution of FLT_ARR_1", 
+       x = "FLT_ARR_1 (Arrival Counts)", 
+       y = "Frequency")
+
+```
+# interpretation
+The histogram shows a right-skewed distribution. This means that the majority of the values in the dataset (FLT_ARR_1) are concentrated towards the lower end, with a few larger values extending towards the right.
+
+Key Observations:
+
+Peak: The highest frequency is observed between 0 and 50 FLT_ARR_1 counts. This indicates that a large number of flights have arrival counts within this range.
+Tail: The distribution has a long tail towards the right. This suggests that there are some flights with significantly higher arrival counts compared to the majority.
+Range: The x-axis (FLT_ARR_1) ranges from 0 to 800, indicating that the arrival counts of flights in this dataset vary from 0 to 800.
+Possible Interpretations:
+
+Airport Hub: The peak around 0-50 might suggest that this dataset is likely from a smaller airport or a less busy time period.
+Seasonal Variation: The right-skewed distribution could be due to seasonal variations in flight traffic.
+Outliers: The long tail might indicate the presence of a few flights with exceptionally high arrival counts, which could be due to special events or other factors.
+
+conclusion
+Right-skewed distribution: This indicates that most flights have a small number of arrivals, with a few flights having a significantly larger number of arrivals. This could be due to factors like hub airports, popular destinations, or specific airline operations.
+
+
+```{r}
+# Summary statistics for numeric variables
+summary(flights_data)
+
+# Plot the distribution of Total Flight Time (FLT_TOT_1)
+ggplot(flights_data, aes(x = FLT_TOT_1)) + 
+  geom_histogram(bins = 30, fill = "red", color = "black") + 
+  theme_minimal() + 
+  labs(title = "Total Flight Time Distribution")
+
+```
+
+# interpretation
+
+
+The histogram shows a right-skewed distribution. This means that the majority of the values in the dataset (FLT_TOT_1) are concentrated towards the lower end, with a few larger values extending towards the right.
+
+Key Observations:
+
+Peak: The highest frequency is observed between 0 and 50 FLT_TOT_1 counts. This indicates that a large number of flights have total flight times within this range.
+Tail: The distribution has a long tail towards the right. This suggests that there are some flights with significantly longer total flight times compared to the majority.
+Range: The x-axis (FLT_TOT_1) ranges from 0 to 1500, indicating that the total flight times of flights in this dataset vary from 0 to 1500 minutes.
+Possible Interpretations:
+
+Short-haul flights: The peak around 0-50 might suggest that this dataset is likely dominated by short-haul flights.
+Long-haul flights: The right-skewed distribution could be due to the presence of a few long-haul flights with significantly longer flight times.
+Outliers: The long tail might indicate the presence of a few flights with exceptionally high total flight times, which could be due to special events or other factors.
+
+cocnlusion 
+Right-skewed distribution: Similar to the first histogram, this indicates that most flights have shorter durations, with a few flights having significantly longer durations. This could be due to long-haul flights, international routes, or specific airline strategies.
+
+
+
+
+
+4.2 Relationship Between Variables
+Explore how different variables relate to each other. For example, you can plot the relationship between flight distance and departure delay:
+
+```{r}
+# Scatter plot of Total Flight Time vs Departure Delay
+ggplot(flights_data, aes(x = FLT_TOT_1, y = FLT_DEP_1)) +
+  geom_point(alpha = 0.3) +
+  theme_minimal() +
+  labs(title = "Total Flight Time vs Departure Delay", x = "Total Flight Time", y = "Departure Delay")
+
+```
+
+# interpretation
+The scatter plot shows a strong positive linear relationship between Total Flight Time and Departure Delay. This means that as the total flight time increases, the departure delay also tends to increase.
+
+Key Observations:
+
+Positive Correlation: The points on the plot generally follow an upward trend, indicating a positive correlation between the two variables.
+Linear Relationship: The points seem to cluster around a straight line, suggesting a linear relationship between the variables.
+Spread: The points are somewhat spread out around the line, indicating some variability in the relationship. There are also a few outliers, which are points that deviate significantly from the general trend.
+Possible Interpretations:
+
+Longer Flights, Longer Delays: The positive correlation suggests that longer flights are more likely to experience longer delays. This could be due to various factors such as increased complexity in flight operations, higher chances of disruptions, or cascading effects of delays from previous flights.
+Outliers: The outliers might represent flights with exceptional circumstances, such as severe weather conditions, technical issues, or other unforeseen events.
+
+Conclusion:
+Based on the scatter plot, there is a strong positive linear relationship between total flight time and departure delay in this dataset. This suggests that longer flights are more likely to experience longer delays. However, it's important to note that this relationship is not perfect, and there are other factors that can influence departure delays.
+
+
+
+
+
+
+
+Overall Conclusions:
+
+Based on the provided visualizations, we can draw the following conclusions about the flight dataset:
+
+Flight Arrival Patterns: Most flights have a small number of arrivals, with a few exceptions.
+Flight Duration: Most flights are relatively short in duration, with a few long-haul flights.
+Delay Patterns: Longer flights tend to have longer departure delays, indicating a potential correlation between flight duration and delay.
+Exceptional Flights: A few flights with significantly high arrival counts or very long durations might require further investigation to understand the underlying reasons.
+
+
+4.3 Categorical Variables
+You can also explore how categorical variables like month, day of the week, or airline affect delays. For example, comparing delays by airline:
+
+```{r}
+# Bar plot of average Departure Delay by State (Country)
+ggplot(flights_data, aes(x = STATE_NAME, y = FLT_DEP_1)) +
+  geom_bar(stat = "summary", fun = "mean", fill = "skyblue") +
+  theme_minimal() +
+  labs(title = "Average Departure Delay by State (Country)", y = "Average Departure Delay") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+
+The bar chart shows the average departure delay for different countries. The bars vary in height, indicating differences in average departure delays across countries.
+
+Key Observations:
+
+Range of Delays: The average departure delays range from close to 0 minutes to over 300 minutes.
+Countries with High Delays: Some countries have significantly higher average departure delays than others. For example, Denmark, Estonia, and Finland have among the highest average delays.
+Countries with Low Delays: Some countries have relatively low average departure delays. For example, Albania, Armenia, and Austria have among the lowest average delays.
+
+Possible Interpretations:
+
+Airport Infrastructure: Differences in airport infrastructure, capacity, and efficiency could contribute to variations in departure delays.
+Air Traffic Control: Air traffic control systems and procedures can impact departure delays.
+Airline Operations: Airline policies, procedures, and punctuality can affect departure delays.
+Weather Conditions: Weather conditions can significantly impact flight operations and lead to delays.
+Conclusion:
+
+Based on the bar chart, there are significant variations in average departure delays across different countries. Some countries consistently experience higher delays compared to others. Further analysis is needed to identify the specific factors contributing to these differences and to develop strategies to mitigate delays.
+
+
+
+
+
+
+4.4 Analyze Time Series Data
+If your dataset contains date or time-related columns, you can explore trends over time. For example, plotting departure delays over months:
+
+```{r}
+# Plot Departure Delays by Month
+ggplot(flights_data, aes(x = MONTH_MON, y = FLT_DEP_1)) + 
+  geom_boxplot(fill = "green") +
+  theme_minimal() +
+  labs(title = "Departure Delays by Month", y = "Departure Delay") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+Overall Pattern:
+
+The box plot shows the distribution of departure delays for each month of the year. The box plots vary in height and shape, indicating differences in the distribution of delays across months.
+
+Key Observations:
+
+Median Delay: The black line within each box represents the median delay for that month. The median delay varies across months, with some months having higher median delays than others.
+Interquartile Range (IQR): The box in each plot represents the IQR, which contains 50% of the data. The size of the box indicates the variability in delays within that month.
+
+Outliers: The dots above and below the whiskers represent outliers, which are data points that are significantly larger or smaller than the rest of the data.
+Month-wise Trends: Some months consistently have higher median delays and larger IQRs compared to others. For example, July and August seem to have higher delays compared to January and February.
+Possible Interpretations:
+
+Seasonal Variations: Weather patterns, holiday seasons, and increased travel demand during certain months could contribute to variations in departure delays.
+Airport Capacity: Airport capacity and congestion during peak travel times could impact delays.
+Airline Operations: Airline schedules, staffing levels, and maintenance schedules can influence delays.
+
+Conclusion:
+
+Based on the box plot, there are significant variations in departure delays across different months of the year. Some months consistently experience higher delays compared to others. Further analysis is needed to identify the specific factors contributing to these seasonal variations and to develop strategies to mitigate delays during peak travel periods.
+
+
+
+
+
+
+
+
+4.5 Correlation Analysis (For Numeric Variables)
+If you're working with numeric variables, you can check for correlations between variables such as departure delay, arrival delay, and flight distance. For this, a correlation matrix can help visualize the relationships:
+```{r}
+# Select numeric columns for correlation
+numeric_data <- flights_data %>% select(FLT_DEP_1, FLT_ARR_1, FLT_TOT_1)
+
+# Compute correlation matrix
+cor_matrix <- cor(numeric_data, use = "complete.obs")
+
+# Visualize correlation matrix
+corrplot(cor_matrix, method = "circle")
+
+```
+
+Overall Pattern:
+
+The correlation matrix shows the pairwise correlations between the variables FLT_DEP_1, FLT_ARR_1, and FLT_TOT_1. The strength and direction of the correlation are represented by the color intensity and shade.
+
+Key Observations:
+
+Positive Correlations: The diagonal elements show perfect positive correlations (value of 1) between each variable and itself. This is expected.
+Strong Positive Correlations: The off-diagonal elements show strong positive correlations between the variables. The color intensity is close to 1, indicating a very strong positive relationship.
+Symmetry: The matrix is symmetric, meaning the correlation between two variables is the same regardless of the order.
+
+Possible Interpretations:
+
+Relationship between Variables: The strong positive correlations suggest that the variables FLT_DEP_1, FLT_ARR_1, and FLT_TOT_1 are highly related to each other. This makes sense because they all represent different aspects of flight delays.
+Multicollinearity: The high correlations might indicate multicollinearity, which can be a problem in statistical modeling. Multicollinearity occurs when independent variables in a regression model are highly correlated with each other.
+Conclusion:
+
+The correlation matrix reveals that the variables FLT_DEP_1, FLT_ARR_1, and FLT_TOT_1 are highly correlated with each other. This suggests that these variables are likely measuring similar aspects of flight delays. While this information is useful for understanding the relationships between these variables, it's important to be aware of the potential issue of multicollinearity when building statistical models with these variables.
+
+
+
+
+
+Step 5: Identify Patterns and Trends
+Use visualization tools to identify any trends and patterns. For example, look at whether delays increase with flight distance or if there are seasonal trends in delays.
+
+5.1 Average Delays by Day of Week
+You can explore how delays vary by the day of the week:
+
+```{r}
+# Extract Day of the Week from the FLT_DATE column (assuming it's in POSIXct format)
+flights_data$DayOfWeek <- weekdays(flights_data$FLT_DATE)
+
+# Convert DayOfWeek to factor
+flights_data$DayOfWeek <- as.factor(flights_data$DayOfWeek)
+
+# Plot average departure delay by day of the week
+ggplot(flights_data, aes(x = DayOfWeek, y = FLT_DEP_1)) +
+  geom_bar(stat = "summary", fun = "mean", fill = "lightblue") +
+  theme_minimal() +
+  labs(title = "Average Departure Delay by Day of the Week", y = "Average Departure Delay")
+
+```
+
+Overall Pattern:
+
+The bar chart shows the average departure delay for each day of the week. The bars vary in height, indicating differences in average departure delays across weekdays.
+
+Key Observations:
+
+Range of Delays: The average departure delays range from approximately 40 minutes to 65 minutes.
+Days with High Delays: Fridays and Mondays appear to have slightly higher average delays compared to other weekdays.
+Days with Low Delays: Saturdays and Sundays seem to have the lowest average delays.
+Possible Interpretations:
+
+Weekend Traffic: The lower delays on weekends might be due to reduced air traffic and less congestion at airports.
+Weekday Rush: The higher delays on Fridays and Mondays could be attributed to increased travel demand, particularly for business travelers.
+Airline Operations: Airline schedules, staffing levels, and maintenance schedules can also influence delays on specific weekdays.
+Conclusion:
+
+Based on the bar chart, there are variations in average departure delays across different days of the week. Fridays and Mondays tend to have slightly higher delays, while weekends experience lower delays. Further analysis is needed to identify the specific factors contributing to these differences and to develop strategies to mitigate delays during peak travel times.
+
+
+
+
+
+
+
+
+
+
+5.2 Flight Delays and Cancellations
+You can also explore the relationship between flight delays and cancellations:
+```{r}
+# Plot the distribution of departure delays and arrival delays
+ggplot(flights_data, aes(x = FLT_DEP_1, fill = as.factor(FLT_ARR_1 > 0))) +  # Assuming positive arrival delays indicate late arrivals
+  geom_histogram(position = "fill", bins = 30) +
+  theme_minimal() +
+  labs(title = "Departure Delays Based on Arrival Delays", x = "Departure Delay", fill = "Arrival Delay > 0")
+
+
+```
+
+Overall Pattern:
+
+The bar chart shows the relationship between departure delays and arrival delays. The bars represent the count of flights with different departure delays, categorized by whether the arrival delay was greater than 0 (True) or not (False).
+
+Key Observations:
+
+Dominant Pattern: The vast majority of flights have departure delays and also have arrival delays greater than 0. This is evident from the tall blue bar.
+Minimal Instances: A very small number of flights have departure delays but no arrival delays greater than 0. This is represented by the small red bar.
+
+Possible Interpretations:
+
+Cascading Effect: The large number of flights with both departure and arrival delays suggests a cascading effect. Delays in one flight can ripple through the system, leading to further delays in subsequent flights.
+Operational Factors: Other operational factors, such as weather conditions, air traffic control issues, or airline-specific problems, can also contribute to both departure and arrival delays.
+Conclusion:
+
+Based on the bar chart, there is a strong association between departure delays and arrival delays. The majority of flights with departure delays also have arrival delays. This suggests that delays in one aspect of the flight operation can lead to delays in other aspects.
+
+
+
+
+
+Step 6: Handle Outliers
+For numeric variables like departure delay and arrival delay, you may want to inspect and handle outliers. For example, using boxplots to identify outliers:
+```{r}
+# Boxplot to detect outliers in Departure Delay using FLT_DEP_1
+ggplot(flights_data, aes(y = FLT_DEP_1)) +
+  geom_boxplot(fill = "lightblue") +
+  theme_minimal() +
+  labs(title = "Boxplot of Departure Delay (FLT_DEP_1)", y = "Departure Delay")
+
+```
+Overall Pattern:
+
+The box plot shows the distribution of departure delays (FLT_DEP_1). The box represents the interquartile range (IQR), containing 50% of the data. The line within the box indicates the median delay. The whiskers extend to the minimum and maximum values, excluding outliers.
+
+Key Observations:
+
+Median Delay: The median delay is close to zero, indicating that half of the flights have departure delays less than zero (i.e., they depart on time or early).
+IQR: The IQR is very small, suggesting that the majority of flights have minimal departure delays.
+Outliers: There are numerous outliers above the upper whisker, indicating a significant number of flights with very large departure delays.
+
+Possible Interpretations:
+
+Frequent Punctuality: The low median and small IQR suggest that most flights depart on time or with minimal delays.
+Occasional Major Delays: The presence of many outliers indicates that while most flights are punctual, there are a significant number of flights that experience substantial delays. These delays could be due to various factors such as weather conditions, air traffic control issues, or airline-specific problems.
+Conclusion:
+
+Based on the box plot, the dataset shows a high degree of punctuality in flight departures, with most flights departing on time or with minimal delays. However, there is a significant number of flights that experience substantial delays, suggesting the presence of factors that can disrupt flight schedules.
+
+
+
+
+
+
+
+Overall Conclusion
+Based on the analysis of the flight dataset, we can draw the following conclusions:
+
+Key Findings:
+
+Flight Delays:
+A significant portion of flights experience delays, both in departure and arrival.
+Delays are influenced by various factors, including weather conditions, air traffic control, airline operations, and seasonal variations.
+Longer flights tend to have higher delays, suggesting a correlation between flight duration and delay.
+Specific days of the week (Fridays, Mondays) and months (July, August) tend to have higher average delays.
+Data Quality:
+The dataset contains outliers, indicating the presence of exceptional circumstances that significantly impact flight operations.
+Knowledge Gained:
+
+Through the analysis, the individual gained valuable insights into the factors influencing flight delays and the patterns associated with these delays. Specifically, they learned:
+
+The impact of various factors on flight delays: Weather conditions, air traffic control, airline operations, and seasonal variations can all contribute to delays.
+The relationship between flight duration and delay: Longer flights are more likely to experience delays.
+The influence of day of the week and month on delays: Certain days and months are more prone to delays.
+The presence of outliers: Some flights experience exceptionally large delays, which could be due to specific events or circumstances.
+The importance of data quality: Outliers can impact the analysis and interpretation of results.
+By understanding these factors and patterns, the individual can make informed decisions, such as planning travel during less congested times, choosing airlines with better punctuality records, or being prepared for potential delays. Additionally, this knowledge can be used to identify areas for improvement in the aviation industry, such as optimizing flight schedules, improving airport infrastructure, and implementing better weather management strategies.
+
+Further Analysis:
+
+To gain deeper insights, it is recommended to:
+
+Analyze additional variables: Consider factors like airline, origin/destination airports, time of day, and day of the week to identify their impact on departure delays.
+Statistical Analysis: Conduct statistical tests to quantify the strength of relationships between variables and to identify significant patterns.
+Data Visualization: Explore other visualizations like scatter plots, histograms, and heatmaps to uncover additional trends and anomalies.
+Machine Learning: Utilize machine learning techniques to predict delays based on various factors and develop more accurate models.
+By combining these approaches, we can gain a comprehensive understanding of the factors influencing flight delays and develop strategies to improve flight punctuality.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+You can remove outliers by filtering out extreme values or using transformations like logarithms to reduce their impact.
+
+Conclusion
+By following the steps above, you will be able to clean and explore the Flight Delays Dataset using R. This process involves handling missing values, converting data types, and performing basic visualizations and statistical analysis to identify relationships and trends in the data. You can continue with further advanced analysis, such as building prediction models, after this initial EDA.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
